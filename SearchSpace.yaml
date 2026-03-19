@@ -1,0 +1,77 @@
+component_generation:
+  trx:
+    methods: [RF, BCC]
+    frequencies: [900, 40]
+    bandwidths: [2, 40]
+    data_rates: [10, 20, 30, 40, 50, 60, 70, 80]
+    modulations: [BPSK, OOK]
+    radiated_powers: [1, 10]
+    static_powers: [0]
+    dynamic_powers: [1.6, 4.0, 6.4]
+    noise_figures: [10]
+    create_subset: true
+    desired:
+      - method: RF
+        data_rate: 20.0
+        dynamic_power: 4.0
+        modulation: BPSK
+        radiated_power: 10
+        bandwidth: 2
+      - method: BCC
+        data_rate: 80.0
+        dynamic_power: 6.4
+        modulation: BPSK
+        radiated_power: 1
+        bandwidth: 40
+  processor:
+    create_subset: false
+    subset_splits:
+      - [5, 1, 1]
+      - [1, 5, 1]
+      - [1, 1, 5]
+
+  # Power sweep example: vary energy storage energy density by selected TierX power source.
+  # This is used when running sweep_types: ["power"].
+  power:
+    energy_densities_by_source:
+      SMALL-CAP: [50]
+      BAT: [400, 800]
+
+dse:
+  electrodes:
+    default: [200]
+    throughput:
+      SpikeSorting: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]
+      GRU: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900]
+      NN: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000]
+      Seizure: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000]
+      default: [100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800, 4000, 4200, 4400, 4600, 4800, 5000, 5200, 5400, 5600, 5800, 6000, 6200, 6400, 6600, 6800, 7000, 7200, 7400, 7600, 7800, 8000, 8200, 8400, 8600, 8800, 9000, 9200, 9400, 9600, 9800]
+  charge_times:
+    operatingtime: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+  ga:
+    # Optimized GA parameters for faster convergence while maintaining near-optimal results
+    pop_size: 12          # Population size - slightly larger for better diversity
+    generations: 8        # Max generations (early stopping may terminate sooner)
+    crossover: 0.85       # Crossover rate - higher for more exploration
+    mutation: 0.15        # Base mutation rate - adaptive mutation will adjust dynamically
+    elitism: 2            # Number of top solutions preserved across generations
+    early_stop: 3         # Stop if no improvement for this many generations
+    tournament_size: 3    # Tournament selection size
+    adaptive_mutation: true  # Enable adaptive mutation rate
+    apply_pruning: true   # Apply pruning filter during GA fitness evaluation
+  
+  pruning:
+    # Configurable conditions for rejecting simulation results
+    # Note: Violations are always detected and logged regardless of these settings.
+    #       These options control whether to REJECT results with violations.
+    check_ber: true       # Reject results with invalid BER (None)
+    check_power_violation: true   # Reject results with peak power violation
+    check_avg_power_violation: false  # Reject results with average power violation (disabled by default)
+    check_latency_violation: true # Reject results with latency violation
+    
+    # Smart pruning (branch-and-bound style optimization):
+    # - Power-based: If implant power at X electrodes causes power violation,
+    #   automatically skip all configs with >= X electrodes for that component
+    # - Electrode-based: For throughput optimization, if X electrodes fails (BER=None),
+    #   skip all configs with >= X electrodes for that component
+    # This significantly reduces simulation count by learning from failures
